@@ -1,5 +1,8 @@
 using Soenneker.OpenApi.Converters.Meta.Registrars;
 using Soenneker.Kiota.Util.Registrars;
+using Soenneker.Git.Util.Registrars;
+using Soenneker.Utils.Directory.Registrars;
+using Soenneker.Utils.File.Registrars;
 using Soenneker.OpenApi.Fixer.Registrars;
 using Microsoft.Extensions.DependencyInjection;
 using Soenneker.Managers.Runners.Registrars;
@@ -26,7 +29,10 @@ public static class Startup
                 .AddRunnersManagerAsSingleton()
                 .AddMetaOpenApiConverterAsSingleton()
                 .AddKiotaUtilAsSingleton()
-                .AddOpenApiFixerAsSingleton();
+                .AddOpenApiFixerAsSingleton()
+                .AddGitUtilAsSingleton()
+                .AddDirectoryUtilAsSingleton()
+                .AddFileUtilAsSingleton();
 
         return services;
     }
