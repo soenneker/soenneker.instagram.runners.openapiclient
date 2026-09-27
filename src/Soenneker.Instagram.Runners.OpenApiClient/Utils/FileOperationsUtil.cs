@@ -41,12 +41,14 @@ public sealed class FileOperationsUtil(
             {
                 string upstream = Path.Combine(scratch, "meta");
                 if (!Regex.IsMatch(revision, @"^[A-Za-z0-9][A-Za-z0-9._/-]*$"))
-                    throw new ArgumentException("MetaRef must be a branch, tag, or commit using letters, digits, dots, underscores, slashes, or hyphens.");
+                    throw new ArgumentException(
+                        "MetaRef must be a branch, tag, or commit using letters, digits, dots, underscores, slashes, or hyphens.");
                 await git.Clone("https://github.com/facebook/facebook-business-sdk-codegen.git", upstream,
                     shallow: true, cancellationToken: cancellationToken);
                 await git.Run($"fetch --depth=1 origin {revision}", upstream, cancellationToken: cancellationToken);
                 await git.Run("checkout --detach FETCH_HEAD", upstream, cancellationToken: cancellationToken);
-                revision = string.Join("", await git.Run("rev-parse HEAD", upstream, cancellationToken: cancellationToken)).Trim();
+                revision = string.Join("",
+                    await git.Run("rev-parse HEAD", upstream, cancellationToken: cancellationToken)).Trim();
                 specsDirectory = Path.Combine(upstream, "api_specs", "specs");
             }
             else
@@ -93,7 +95,8 @@ public sealed class FileOperationsUtil(
             string destination = Path.GetFullPath(Path.Combine(projectDirectory, "Generated"));
             if (Path.GetDirectoryName(destination) != Path.GetFullPath(projectDirectory))
                 throw new InvalidOperationException("Generated directory must remain inside the client project.");
-            if (await directoryUtil.Exists(destination, cancellationToken) && new DirectoryInfo(destination).LinkTarget is not null)
+            if (await directoryUtil.Exists(destination, cancellationToken) &&
+                new DirectoryInfo(destination).LinkTarget is not null)
                 throw new InvalidOperationException("The generated directory cannot be a link.");
             await directoryUtil.DeleteIfExists(destination, cancellationToken);
             await directoryUtil.CopyDirectory(generated, destination, cancellationToken: cancellationToken);
