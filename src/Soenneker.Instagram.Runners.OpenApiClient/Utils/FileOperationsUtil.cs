@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Soenneker.Git.Util.Abstract;
 using Soenneker.Kiota.Util.Abstract;
+using Soenneker.OpenApi.Fixer.Abstract;
 using Soenneker.Utils.Dotnet.Abstract;
 using Soenneker.OpenApi.Converters.Meta.Abstract;
 using Soenneker.OpenApi.Converters.Meta.Models;
@@ -21,6 +22,7 @@ public sealed class FileOperationsUtil(
     IMetaOpenApiConverter converter,
     IGitUtil git,
     IKiotaUtil kiota,
+    IOpenApiFixer fixer,
     IDotnetUtil dotnet) : IFileOperationsUtil
 {
     public async ValueTask Process(CancellationToken cancellationToken = default)
@@ -59,8 +61,8 @@ public sealed class FileOperationsUtil(
                 new MetaOpenApiConverterOptions
                 {
                     GraphApiVersion = configuration["Instagram:GraphApiVersion"] ?? "v26.0",
-                    Title = "Instagram Publishing API",
-                    Profile = MetaOpenApiProfile.InstagramPublishing,
+                    Title = "Instagram Graph API",
+                    Profile = MetaOpenApiProfile.Instagram,
                     SourceRevision = revision
                 }, cancellationToken);
             logger.LogInformation("Converted Meta specs: {Schemas} schemas, {Paths} paths, {Diagnostics} diagnostics",
@@ -68,9 +70,13 @@ public sealed class FileOperationsUtil(
             await File.WriteAllTextAsync(Path.Combine(clientDirectory, "generation-diagnostics.json"),
                 JsonSerializer.Serialize(result.Diagnostics, new JsonSerializerOptions { WriteIndented = true }), cancellationToken);
 
+            string fixedPath = Path.Combine(clientDirectory, "openapi.fixed.json");
+            await fixer.Fix(documentPath, fixedPath, cancellationToken);
+            result.ValidateOperationCoverage(await File.ReadAllTextAsync(fixedPath, cancellationToken));
             await kiota.EnsureInstalled(cancellationToken);
-            await kiota.Generate(documentPath, "InstagramOpenApiClient", Constants.Library, scratch, cancellationToken);
+            await kiota.Generate(fixedPath, "InstagramOpenApiClient", Constants.Library, scratch, cancellationToken);
             string generated = Path.Combine(scratch, "src", Constants.Library);
+            await fixer.SanitizeGeneratedEnumMembers(generated, cancellationToken);
             string destination = Path.GetFullPath(Path.Combine(projectDirectory, "Generated"));
             if (Path.GetDirectoryName(destination) != Path.GetFullPath(projectDirectory))
                 throw new InvalidOperationException("Generated directory must remain inside the client project.");
@@ -97,7 +103,7 @@ public sealed class FileOperationsUtil(
                 string token = Environment.GetEnvironmentVariable("GH__TOKEN") ?? throw new InvalidOperationException("GH__TOKEN is required to push.");
                 string name = Environment.GetEnvironmentVariable("GIT__NAME") ?? throw new InvalidOperationException("GIT__NAME is required to push.");
                 string email = Environment.GetEnvironmentVariable("GIT__EMAIL") ?? throw new InvalidOperationException("GIT__EMAIL is required to push.");
-                await git.CommitAndPush(clientDirectory, "Regenerate Instagram publishing client from Meta specifications", token, name, email, cancellationToken);
+                await git.CommitAndPush(clientDirectory, "Regenerate Instagram Graph API client from Meta specifications", token, name, email, cancellationToken);
             }
             logger.LogInformation("Generated and built {Library} in {Directory}", Constants.Library, clientDirectory);
         }
