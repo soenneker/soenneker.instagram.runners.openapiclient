@@ -30,6 +30,6 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Soenneker.OpenApi.Converters.Meta" Version="4.0.1" />
-        <Content Include="..\..\.config\dotnet-tools.json" Link=".config\dotnet-tools.json" CopyToOutputDirectory="PreserveNewest" />
+        <PackageReference Include="Soenneker.Kiota.Util" Version="4.0.140" />
     </ItemGroup>
 </Project>

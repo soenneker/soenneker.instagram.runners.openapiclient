@@ -1,4 +1,5 @@
 using Soenneker.OpenApi.Converters.Meta.Registrars;
+using Soenneker.Kiota.Util.Registrars;
 using Microsoft.Extensions.DependencyInjection;
 using Soenneker.Managers.Runners.Registrars;
 using Soenneker.Instagram.Runners.OpenApiClient.Utils;
@@ -22,7 +23,8 @@ public static class Startup
         services.AddHostedService<ConsoleHostedService>()
                 .AddSingleton<IFileOperationsUtil, FileOperationsUtil>()
                 .AddRunnersManagerAsSingleton()
-                .AddMetaOpenApiConverterAsSingleton();
+                .AddMetaOpenApiConverterAsSingleton()
+                .AddKiotaUtilAsSingleton();
 
         return services;
     }

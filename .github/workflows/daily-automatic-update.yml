@@ -6,6 +6,8 @@ on:
 
 env:
   ASPNETCORE_ENVIRONMENT: Production
+  PipelineEnvironment: true
+  NUGET_XMLDOC_MODE: skip
   Instagram__Push: true
   GH__USERNAME: ${{ secrets.GH__USERNAME }}
   GH__TOKEN: ${{ secrets.GH__TOKEN }}
@@ -28,6 +30,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Setting up build version
         run: |

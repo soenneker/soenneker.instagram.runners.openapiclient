@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Soenneker.Git.Util.Abstract;
+using Soenneker.Kiota.Util.Abstract;
+using Soenneker.Utils.Dotnet.Abstract;
 using Soenneker.OpenApi.Converters.Meta.Abstract;
 using Soenneker.OpenApi.Converters.Meta.Models;
 using Soenneker.Instagram.Runners.OpenApiClient.Utils.Abstract;
@@ -20,7 +22,9 @@ public sealed class FileOperationsUtil(
     IConfiguration configuration,
     ILogger<FileOperationsUtil> logger,
     IMetaOpenApiConverter converter,
-    IGitUtil git) : IFileOperationsUtil
+    IGitUtil git,
+    IKiotaUtil kiota,
+    IDotnetUtil dotnet) : IFileOperationsUtil
 {
     public async ValueTask Process(CancellationToken cancellationToken = default)
     {
@@ -115,13 +119,9 @@ public sealed class FileOperationsUtil(
             await File.WriteAllTextAsync(Path.Combine(clientDirectory, "generation-diagnostics.json"),
                 JsonSerializer.Serialize(result.Diagnostics, new JsonSerializerOptions { WriteIndented = true }), cancellationToken);
 
-            string manifest = Path.Combine(AppContext.BaseDirectory, ".config", "dotnet-tools.json");
-            await Run("dotnet", ["tool", "restore", "--tool-manifest", manifest], AppContext.BaseDirectory, cancellationToken);
-            string generated = Path.Combine(scratch, "generated");
-            await Run("dotnet", ["tool", "run", "kiota", "--", "generate", "--language", "CSharp",
-                "--openapi", documentPath, "--output", generated, "--class-name", "InstagramOpenApiClient",
-                "--namespace-name", Constants.Library, "--exclude-backward-compatible", "--additional-data"], AppContext.BaseDirectory, cancellationToken);
-
+            await kiota.EnsureInstalled(cancellationToken);
+            await kiota.Generate(documentPath, "InstagramOpenApiClient", Constants.Library, scratch, cancellationToken);
+            string generated = Path.Combine(scratch, "src", Constants.Library);
             string destination = Path.GetFullPath(Path.Combine(projectDirectory, "Generated"));
             if (Path.GetDirectoryName(destination) != Path.GetFullPath(projectDirectory))
                 throw new InvalidOperationException("Generated directory must remain inside the client project.");
@@ -138,7 +138,10 @@ public sealed class FileOperationsUtil(
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 File.Copy(path, target);
             }
-            await Run("dotnet", ["build", project, "--configuration", "Release", "--verbosity", "minimal"], clientDirectory, cancellationToken);
+            if (!await dotnet.Restore(project, cancellationToken: cancellationToken))
+                throw new InvalidOperationException("The generated client could not be restored.");
+            if (!await dotnet.Build(project, true, "Release", false, cancellationToken: cancellationToken))
+                throw new InvalidOperationException("The generated client did not build successfully.");
 
             if (configuration.GetValue<bool>("Instagram:Push"))
             {
