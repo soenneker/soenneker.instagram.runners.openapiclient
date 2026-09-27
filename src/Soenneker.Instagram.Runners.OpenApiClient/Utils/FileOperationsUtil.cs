@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -57,63 +54,15 @@ public sealed class FileOperationsUtil(
             if (!File.Exists(project))
                 throw new InvalidOperationException($"Client project not found: {project}. Set Instagram:ClientDirectory to the scaffolded repository.");
 
-            var specifications = new SortedDictionary<string, string>(StringComparer.Ordinal);
-            foreach (string path in Directory.EnumerateFiles(specsDirectory, "*.json").Order(StringComparer.Ordinal))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                string name = Path.GetFileNameWithoutExtension(path);
-                JsonNode node = JsonNode.Parse(await File.ReadAllTextAsync(path, cancellationToken))!;
-                if (node is JsonObject obj && obj["apis"] is JsonArray apis)
-                {
-                    for (int i = apis.Count - 1; i >= 0; i--)
-                    {
-                        string operation = $"{name} {apis[i]!["method"]!.GetValue<string>()} {apis[i]!["endpoint"]?.GetValue<string>()}".TrimEnd();
-                        if (!PublishingProfile.Operations.Contains(operation)) apis.RemoveAt(i);
-                    }
-                }
-                specifications.Add(name, node.ToJsonString());
-            }
-            PublishingProfile.AdjustSpecifications(specifications);
-            var availableOperations = new HashSet<string>(StringComparer.Ordinal);
-            foreach ((string nodeName, string json) in specifications)
-            {
-                if (JsonNode.Parse(json) is not JsonObject node || node["apis"] is not JsonArray apis) continue;
-                foreach (JsonNode? api in apis)
-                    availableOperations.Add($"{nodeName} {api!["method"]!.GetValue<string>()} {api["endpoint"]?.GetValue<string>()}".TrimEnd());
-            }
-            string[] missingOperations = PublishingProfile.Operations.Except(availableOperations).ToArray();
-            if (missingOperations.Length > 0)
-                throw new InvalidOperationException($"Meta specifications are missing required publishing operations: {string.Join(", ", missingOperations)}");
-            var options = new MetaOpenApiConverterOptions
-            {
-                GraphApiVersion = configuration["Instagram:GraphApiVersion"] ?? "v26.0",
-                Title = "Instagram Publishing API",
-                NodeTypes = PublishingProfile.Nodes,
-                ResponseSchemaOverrides = PublishingProfile.Responses
-            };
-            MetaOpenApiConversionResult result = converter.Convert(specifications, options);
-            // Kiota cannot name a root indexer called just {id}; use a descriptive parameter.
-            var paths = result.Document["paths"]!.AsObject();
-            foreach ((string path, JsonNode? item) in paths.ToArray())
-            {
-                if (!path.Contains("{id}", StringComparison.Ordinal)) continue;
-                paths.Remove(path);
-                paths[path.Replace("{id}", "{node-id}", StringComparison.Ordinal)] = item;
-                foreach (JsonObject operation in item!.AsObject().Select(x => x.Value).OfType<JsonObject>())
-                    if (operation["parameters"] is JsonArray parameters)
-                        foreach (JsonObject parameter in parameters.Cast<JsonObject>())
-                            if (parameter["in"]?.GetValue<string>() == "path" && parameter["name"]?.GetValue<string>() == "id")
-                                parameter["name"] = "node-id";
-            }
-            PruneSchemas(result.Document);
-            result.Document["x-meta-source"] = new JsonObject
-            {
-                ["repository"] = "https://github.com/facebook/facebook-business-sdk-codegen",
-                ["revision"] = revision,
-                ["profile"] = "Instagram publishing"
-            };
             string documentPath = Path.Combine(clientDirectory, "openapi.json");
-            await File.WriteAllTextAsync(documentPath, result.ToJson(), cancellationToken);
+            MetaOpenApiConversionResult result = await converter.ConvertToFileAsync(specsDirectory, documentPath,
+                new MetaOpenApiConverterOptions
+                {
+                    GraphApiVersion = configuration["Instagram:GraphApiVersion"] ?? "v26.0",
+                    Title = "Instagram Publishing API",
+                    Profile = MetaOpenApiProfile.InstagramPublishing,
+                    SourceRevision = revision
+                }, cancellationToken);
             logger.LogInformation("Converted Meta specs: {Schemas} schemas, {Paths} paths, {Diagnostics} diagnostics",
                 result.Document["components"]!["schemas"]!.AsObject().Count, result.Document["paths"]!.AsObject().Count, result.Diagnostics.Count);
             await File.WriteAllTextAsync(Path.Combine(clientDirectory, "generation-diagnostics.json"),
@@ -166,36 +115,6 @@ public sealed class FileOperationsUtil(
                 Directory.Delete(scratch, true);
             }
         }
-    }
-
-    private static void PruneSchemas(JsonObject document)
-    {
-        var schemas = document["components"]!["schemas"]!.AsObject();
-        var keep = new HashSet<string>(StringComparer.Ordinal);
-        var pending = new Queue<string>();
-        void Visit(JsonNode? node)
-        {
-            if (node is JsonObject obj)
-            {
-                if (obj["$ref"] is JsonValue value && value.TryGetValue<string>(out string? reference) &&
-                    reference.StartsWith("#/components/schemas/", StringComparison.Ordinal))
-                {
-                    string name = reference["#/components/schemas/".Length..];
-                    if (keep.Add(name)) pending.Enqueue(name);
-                }
-                foreach (var property in obj) Visit(property.Value);
-            }
-            else if (node is JsonArray array)
-                foreach (JsonNode? item in array) Visit(item);
-        }
-        Visit(document["paths"]);
-        while (pending.TryDequeue(out string? name))
-        {
-            if (!schemas.ContainsKey(name)) throw new InvalidOperationException($"Unresolved schema reference: {name}");
-            Visit(schemas[name]);
-        }
-        foreach (string name in schemas.Select(x => x.Key).ToArray())
-            if (!keep.Contains(name)) schemas.Remove(name);
     }
 
     private async Task<string> Run(string command, string[] arguments, string directory, CancellationToken cancellationToken)

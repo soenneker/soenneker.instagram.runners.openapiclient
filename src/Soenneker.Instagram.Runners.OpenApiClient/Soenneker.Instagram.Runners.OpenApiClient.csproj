@@ -29,7 +29,7 @@
         <PackageReference Include="Soenneker.Managers.Runners" Version="4.0.2570" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Soenneker.OpenApi.Converters.Meta" Version="4.0.1" />
+        <PackageReference Include="Soenneker.OpenApi.Converters.Meta" Version="4.0.2" />
         <PackageReference Include="Soenneker.Kiota.Util" Version="4.0.140" />
     </ItemGroup>
 </Project>
