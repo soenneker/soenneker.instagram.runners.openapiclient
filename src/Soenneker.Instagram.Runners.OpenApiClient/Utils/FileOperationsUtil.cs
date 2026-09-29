@@ -82,7 +82,7 @@ public sealed class FileOperationsUtil(
                 result.Document["components"]!["schemas"]!.AsObject().Count, result.Document["paths"]!.AsObject().Count,
                 result.Diagnostics.Count);
             await fileUtil.Write(Path.Combine(clientDirectory, "generation-diagnostics.json"),
-                JsonSerializer.Serialize(result.Diagnostics, new JsonSerializerOptions { WriteIndented = true }),
+                JsonSerializer.Serialize(result.Diagnostics, AotJsonContext.Get<System.Collections.Generic.IReadOnlyList<string>>(new JsonSerializerOptions { WriteIndented = true })),
                 cancellationToken: cancellationToken);
 
             string fixedPath = Path.Combine(clientDirectory, "openapi.fixed.json");
