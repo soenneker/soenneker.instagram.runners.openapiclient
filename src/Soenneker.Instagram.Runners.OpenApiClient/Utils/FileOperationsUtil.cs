@@ -111,7 +111,7 @@ public sealed class FileOperationsUtil(
                 string name = EnvironmentUtil.GetVariableStrict("GIT__NAME");
                 string email = EnvironmentUtil.GetVariableStrict("GIT__EMAIL");
                 await git.CommitAndPush(clientDirectory,
-                    "Regenerate Instagram Graph API client from Meta specifications", token, name, email,
+                    await git.GetUpdateCommitMessage(clientDirectory, "Regenerate Instagram Graph API client from Meta specifications", cancellationToken), token, name, email,
                     cancellationToken);
             }
 
