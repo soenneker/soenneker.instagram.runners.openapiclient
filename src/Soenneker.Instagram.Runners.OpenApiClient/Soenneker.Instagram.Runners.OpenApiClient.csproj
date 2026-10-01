@@ -28,7 +28,7 @@
     <ItemGroup>
         <PackageReference Include="Soenneker.Extensions.LoggerConfiguration" Version="4.0.1408" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
-        <PackageReference Include="Soenneker.Managers.Runners" Version="4.0.2593" />
+        <PackageReference Include="Soenneker.Managers.Runners" Version="4.0.2594" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Soenneker.OpenApi.Converters.Meta" Version="4.0.4" />
