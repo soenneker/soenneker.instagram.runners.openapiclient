@@ -27,4 +27,7 @@
         <ProjectReference Include="..\..\src\Soenneker.Instagram.Runners.OpenApiClient\Soenneker.Instagram.Runners.OpenApiClient.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Microsoft.OpenApi" Version="3.10.2" />
+    </ItemGroup>
 </Project>

@@ -31,8 +31,14 @@
         <PackageReference Include="Soenneker.Managers.Runners" Version="4.0.2596" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Soenneker.OpenApi.Converters.Meta" Version="4.0.4" />
         <PackageReference Include="Soenneker.Kiota.Util" Version="4.0.143" />
         <PackageReference Include="Soenneker.OpenApi.Fixer" Version="4.0.377" />
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Soenneker.Instagram.Runners.OpenApiClient.Tests" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\OpenApi\soenneker.openapi.converters.meta\src\Soenneker.OpenApi.Converters.Meta\Soenneker.OpenApi.Converters.Meta.csproj" Condition="Exists('..\..\..\..\OpenApi\soenneker.openapi.converters.meta\src\Soenneker.OpenApi.Converters.Meta\Soenneker.OpenApi.Converters.Meta.csproj')" />
+        <PackageReference Include="Soenneker.OpenApi.Converters.Meta" Version="4.0.5" Condition="!Exists('..\..\..\..\OpenApi\soenneker.openapi.converters.meta\src\Soenneker.OpenApi.Converters.Meta\Soenneker.OpenApi.Converters.Meta.csproj')" />
     </ItemGroup>
 </Project>
