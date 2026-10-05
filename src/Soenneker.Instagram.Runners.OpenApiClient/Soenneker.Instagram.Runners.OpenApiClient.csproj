@@ -32,7 +32,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Soenneker.Kiota.Util" Version="4.0.143" />
-        <PackageReference Include="Soenneker.OpenApi.Fixer" Version="4.0.377" />
+        <PackageReference Include="Soenneker.OpenApi.Fixer" Version="4.0.378" />
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="Soenneker.Instagram.Runners.OpenApiClient.Tests" />
