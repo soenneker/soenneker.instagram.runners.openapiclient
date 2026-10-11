@@ -39,6 +39,6 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\..\..\OpenApi\soenneker.openapi.converters.meta\src\Soenneker.OpenApi.Converters.Meta\Soenneker.OpenApi.Converters.Meta.csproj" Condition="Exists('..\..\..\..\OpenApi\soenneker.openapi.converters.meta\src\Soenneker.OpenApi.Converters.Meta\Soenneker.OpenApi.Converters.Meta.csproj')" />
-        <PackageReference Include="Soenneker.OpenApi.Converters.Meta" Version="4.0.5" Condition="!Exists('..\..\..\..\OpenApi\soenneker.openapi.converters.meta\src\Soenneker.OpenApi.Converters.Meta\Soenneker.OpenApi.Converters.Meta.csproj')" />
+        <PackageReference Include="Soenneker.OpenApi.Converters.Meta" Version="4.0.6" Condition="!Exists('..\..\..\..\OpenApi\soenneker.openapi.converters.meta\src\Soenneker.OpenApi.Converters.Meta\Soenneker.OpenApi.Converters.Meta.csproj')" />
     </ItemGroup>
 </Project>
