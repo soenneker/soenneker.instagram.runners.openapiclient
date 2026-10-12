@@ -50,7 +50,7 @@ jobs:
         run: dotnet build src/Soenneker.Instagram.Runners.OpenApiClient/Soenneker.Instagram.Runners.OpenApiClient.csproj --configuration Release --no-restore
 
       - name: Log in to NuGet
-        uses: NuGet/login@v1
+        uses: soenneker/nuget-resilient-login@v2
         id: nuget-login
         with:
           user: soenneker
